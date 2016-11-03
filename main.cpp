@@ -113,11 +113,24 @@ int main() {
             }
         }
         if(reach){
-            for(int i = 0 ;i < 4;++i){
-                for(int j = 0 ; j < 4 ;++j){
-                    std::cout<<targetNode.status[i][j]<<' ';
+            node *trace = new node[deep];
+            trace[0] = targetNode;
+            for(int k = 1;k < deep;++ k){
+                trace[k] = *(node*)targetNode.last_Node;
+                targetNode = trace[k];
+            }
+            for (int k = deep - 1; k >= 0 ; --k) {
+                std::cout<<"step"<<deep - k<<":"<<std::endl;
+                for(int i = 0 ;i < 4;++i){
+                    for(int j = 0 ; j < 4 ;++j){
+                        if(trace[k].status[i][j] == 0){
+                            printf("%d ",trace[k].status[i][j]);
+                        }else{
+                            printf("%c ",trace[k].status[i][j]);
+                        }
+                    }
+                    std::cout<<std::endl;
                 }
-                std::cout<<std::endl;
             }
             break;
         }
