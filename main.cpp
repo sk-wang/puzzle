@@ -9,16 +9,17 @@ void getAgent(int data[4][4],int &x,int &y);
 int isReach(node leaf);
 int target[4][4]={{0,0,0,0},{0,'A',0,0},{0,'B',0,0},{0,'C',0,0}};
 int main() {
-    //int origin[4][4]={{0,0,0,0},{0,0,0,0},{0,0,0,0},{'A','B','C','L'}};
-    int origin[4][4]={{0,0,0,0},{0,'L','A',0},{0,'B',0,0},{0,'C',0,0}};
+    int origin[4][4]={{0,0,0,0},{0,0,0,0},{0,0,0,0},{'A','B','C','L'}};
+    //int origin[4][4]={{0,0,0,0},{0,'L',0,'A'},{0,'B',0,0},{0,'C',0,0}};
     node originNode;
     node targetNode;
     arrayToNode(&originNode,origin);
-    node now_leafs[100000];
+    node *now_leafs = new node[100000000000];
     now_leafs[0] = originNode;
     int deep = 1,locat = 0,lastLocat = 0;
     int reach = 0;
     while(deep<=100) {
+        std::cout<<lastLocat<<','<<locat<<std::endl;
         //nodes为这一深度生成的节点数
         int nodes = 0,nowX,nowY;
         for(int i = lastLocat ; i <= locat ; ++i){
@@ -28,7 +29,7 @@ int main() {
             //将父节点的状态值赋给一个临时数组
             arrayToArray(tempStatus,now_leafs[i].status);
             //向左移动
-            if(nowX - 1 >=00){
+            if(nowX - 1 >= 0){
                 tempStatus[nowX][nowY] = tempStatus[nowX - 1][nowY];
                 tempStatus[nowX - 1][nowY] = 'L';
                 node tempNode;
@@ -114,7 +115,7 @@ int main() {
         if(reach){
             for(int i = 0 ;i < 4;++i){
                 for(int j = 0 ; j < 4 ;++j){
-                    std::cout<<i<<' ';
+                    std::cout<<targetNode.status[i][j]<<' ';
                 }
                 std::cout<<std::endl;
             }
@@ -150,9 +151,9 @@ void getAgent(int data[4][4],int &x,int &y){
     for(int i=0;i<4;++i){
         for (int j = 0; j < 4; ++j) {
             if(data[i][j] == 'L'){
-                x = j;
-                y = i;
-                break;
+                x = i;
+                y = j;
+                return;
             }
         }
     }
@@ -172,4 +173,5 @@ int isReach(node leaf){
             }
         }
     }
+    return 0;
 }
