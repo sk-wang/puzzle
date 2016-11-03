@@ -9,11 +9,12 @@ void getAgent(int data[4][4],int &x,int &y);
 int isReach(node leaf);
 int target[4][4]={{0,0,0,0},{0,'A',0,0},{0,'B',0,0},{0,'C',0,0}};
 int main() {
-    int origin[4][4]={{0,0,0,0},{0,0,0,0},{0,0,0,0},{'A','B','C','L'}};
+    //int origin[4][4]={{0,0,0,0},{0,0,0,0},{0,0,0,0},{'A','B','C','L'}};
+    int origin[4][4]={{0,0,0,0},{0,'L','A',0},{0,'B',0,0},{0,'C',0,0}};
     node originNode;
     node targetNode;
     arrayToNode(&originNode,origin);
-    node now_leafs[1000];
+    node now_leafs[100000];
     now_leafs[0] = originNode;
     int deep = 1,locat = 0,lastLocat = 0;
     int reach = 0;
@@ -26,10 +27,10 @@ int main() {
             int tempStatus[4][4];
             //将父节点的状态值赋给一个临时数组
             arrayToArray(tempStatus,now_leafs[i].status);
-            //向左上移动
-            if(nowX - 1 >=0 && nowY - 1 >= 0){
-                tempStatus[nowX][nowY] = tempStatus[nowX - 1][nowY - 1];
-                tempStatus[nowX - 1][nowY - 1] = 'L';
+            //向左移动
+            if(nowX - 1 >=00){
+                tempStatus[nowX][nowY] = tempStatus[nowX - 1][nowY];
+                tempStatus[nowX - 1][nowY] = 'L';
                 node tempNode;
                 //将交换后的状态赋值予节点
                 arrayToArray(tempNode.status,tempStatus);
@@ -47,10 +48,10 @@ int main() {
                 }
             }
             arrayToArray(tempStatus,now_leafs[i].status);
-            //向左下移动
-            if(nowX - 1 >=0 && nowY + 1 >= 0){
-                tempStatus[nowX][nowY] = tempStatus[nowX - 1][nowY + 1];
-                tempStatus[nowX - 1][nowY + 1] = 'L';
+            //向右移动
+            if(nowX + 1 <= 3 ){
+                tempStatus[nowX][nowY] = tempStatus[nowX + 1][nowY];
+                tempStatus[nowX + 1][nowY] = 'L';
                 node tempNode;
                 //将交换后的状态赋值予节点
                 arrayToArray(tempNode.status,tempStatus);
@@ -68,10 +69,10 @@ int main() {
                 }
             }
             arrayToArray(tempStatus,now_leafs[i].status);
-            //向右上移动
-            if(nowX + 1 >=0 && nowY - 1 >= 0){
-                tempStatus[nowX][nowY] = tempStatus[nowX + 1][nowY - 1];
-                tempStatus[nowX + 1][nowY - 1] = 'L';
+            //向上移动
+            if(nowY - 1 >= 0){
+                tempStatus[nowX][nowY] = tempStatus[nowX][nowY - 1];
+                tempStatus[nowX][nowY - 1] = 'L';
                 node tempNode;
                 //将交换后的状态赋值予节点
                 arrayToArray(tempNode.status,tempStatus);
@@ -89,10 +90,10 @@ int main() {
                 }
             }
             arrayToArray(tempStatus,now_leafs[i].status);
-            //向右下移动
-            if(nowX + 1 >=0 && nowY + 1 >= 0){
-                tempStatus[nowX][nowY] = tempStatus[nowX + 1][nowY + 1];
-                tempStatus[nowX + 1][nowY + 1] = 'L';
+            //向下移动
+            if(nowY + 1 <= 3){
+                tempStatus[nowX][nowY] = tempStatus[nowX][nowY + 1];
+                tempStatus[nowX][nowY + 1] = 'L';
                 node tempNode;
                 //将交换后的状态赋值予节点
                 arrayToArray(tempNode.status,tempStatus);
@@ -149,8 +150,8 @@ void getAgent(int data[4][4],int &x,int &y){
     for(int i=0;i<4;++i){
         for (int j = 0; j < 4; ++j) {
             if(data[i][j] == 'L'){
-                x = i;
-                y = j;
+                x = j;
+                y = i;
                 break;
             }
         }
