@@ -16,12 +16,12 @@ int main(){
     printf("DFS Searching....\n");
     DFS();
     clock_t finish = clock();
-    printf("DFS executing time is %ld \n",finish - start);
+    printf("DFS executing time is %fs\n",(double)(finish - start)/CLOCKS_PER_SEC);
     start = clock();
     printf("BFS Searching....\n");
     BFS();
     finish = clock();
-    printf("BFS executing time is %ld \n",finish - start);
+    printf("BFS executing time is %fs\n",(double)(finish - start)/CLOCKS_PER_SEC);
     return 0;
 }
 int DFS() {
