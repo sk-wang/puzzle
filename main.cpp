@@ -11,6 +11,8 @@ int target[4][4]={{0,0,0,0},{0,'A',0,0},{0,'B',0,0},{0,'C',0,0}};
 int origin[4][4]={{0,0,0,0},{0,0,0,0},{0,0,0,0},{'A','B','C','L'}};
 int BFS();
 int DFS();
+int Astar();
+int IDDFS();
 int main(){
     clock_t start = clock();
     printf("DFS Searching....\n");
@@ -18,26 +20,40 @@ int main(){
     clock_t finish = clock();
     printf("DFS executing time is %fs\n",(double)(finish - start)/CLOCKS_PER_SEC);
     start = clock();
+    printf("IDDFS Searching....\n");
+    IDDFS();
+    finish = clock();
+    printf("IDDFS executing time is %fs\n",(double)(finish - start)/CLOCKS_PER_SEC);
+    start = clock();
     printf("BFS Searching....\n");
     BFS();
     finish = clock();
     printf("BFS executing time is %fs\n",(double)(finish - start)/CLOCKS_PER_SEC);
+    start = clock();
+    printf("Astar Searching....\n");
+    Astar();
+    finish = clock();
+    printf("Astar executing time is %fs\n",(double)(finish - start)/CLOCKS_PER_SEC);
     return 0;
 }
-int DFS() {
+int Astar(){
+
+    return 0;
+}
+int IDDFS(){
     node originNode;
     node targetNode;
     arrayToNode(&originNode,origin);
     int reach = 0;
     int nowX,nowY,direction,depth = 1;
-    node now_leafs[20];
+    node now_leafs[10000];
     now_leafs[0] = originNode;
     //random seed
     srand(time(NULL));
     while(!reach) {
         //printf("searching\n");
         int i;
-        for (i = 1; i < 20 ; ++i) {
+        for (i = 1; i <= depth ; ++i) {
             //获得上一节点位置
             getAgent(now_leafs[i - 1].status, nowX, nowY);
             int tempStatus[4][4];
@@ -138,7 +154,148 @@ int DFS() {
                 }
             }
             if(reach){
-                printf("BFS result is\n");
+                printf("IDDFS result is\n");
+                node *trace = new node[depth];
+                trace[0] = targetNode;
+                for(int k = 1;k < i;++ k){
+                    trace[k] = *(node*)targetNode.last_Node;
+                    targetNode = trace[k];
+                }
+                for (int k = i - 1; k >= 0 ; --k) {
+                    std::cout<<"step"<<i - k<<":"<<std::endl;
+                    for(int x = 0 ;x < 4;++x){
+                        for(int j = 0 ; j < 4 ;++j){
+                            if(trace[k].status[x][j] == 0){
+                                printf("%d ",trace[k].status[x][j]);
+                            }else{
+                                printf("%c ",trace[k].status[x][j]);
+                            }
+                        }
+                        std::cout<<std::endl;
+                    }
+                }
+                break;
+            }
+        }
+        depth++;
+    }
+    return 0;
+}
+int DFS() {
+    node originNode;
+    node targetNode;
+    arrayToNode(&originNode,origin);
+    int reach = 0;
+    int nowX,nowY,direction,depth = 1;
+    node now_leafs[10000];
+    now_leafs[0] = originNode;
+    //random seed
+    srand(time(NULL));
+    while(!reach) {
+        //printf("searching\n");
+        int i;
+        for (i = 1; i < 10000 ; ++i) {
+            //获得上一节点位置
+            getAgent(now_leafs[i - 1].status, nowX, nowY);
+            int tempStatus[4][4];
+            //将父节点的状态值赋给一个临时数组
+            arrayToArray(tempStatus,now_leafs[i - 1].status);
+            int wrong = 1;
+            while(wrong){
+                wrong = 0;
+                direction = rand() % 4 + 0;
+                switch(direction){
+                    case 0:
+                        if(nowX - 1 >= 0){
+                            tempStatus[nowX][nowY] = tempStatus[nowX - 1][nowY];
+                            tempStatus[nowX - 1][nowY] = 'L';
+                            node tempNode;
+                            //将交换后的状态赋值予节点
+                            arrayToArray(tempNode.status,tempStatus);
+                            tempNode.last_Node = &now_leafs[i - 1];
+                            if (isReach(tempNode)){
+                                targetNode.last_Node =  tempNode.last_Node;
+                                arrayToNode(&targetNode,tempNode.status);
+                                reach = 1;
+                                break;
+                                //如果到达则跳出，并存储节点状态
+                            }else{
+                                now_leafs[i] = tempNode;
+                            }
+                        }else{
+                            wrong = 1;
+                        }
+                        break;
+                    case 1:
+                        if(nowX + 1 <= 3){
+                            tempStatus[nowX][nowY] = tempStatus[nowX + 1][nowY];
+                            tempStatus[nowX + 1][nowY] = 'L';
+                            node tempNode;
+                            //将交换后的状态赋值予节点
+                            arrayToArray(tempNode.status,tempStatus);
+                            tempNode.last_Node = &now_leafs[i - 1];
+                            if (isReach(tempNode)){
+                                targetNode.last_Node =  tempNode.last_Node;
+                                arrayToNode(&targetNode,tempNode.status);
+                                reach = 1;
+                                break;
+                                //如果到达则跳出，并存储节点状态
+                            }else{
+                                now_leafs[i] = tempNode;
+                            }
+                        }else{
+                            wrong = 1;
+                        }
+                        break;
+                    case 2:
+                        if(nowY - 1 >= 0){
+                            tempStatus[nowX][nowY] = tempStatus[nowX][nowY - 1];
+                            tempStatus[nowX][nowY - 1] = 'L';
+                            node tempNode;
+                            //将交换后的状态赋值予节点
+                            arrayToArray(tempNode.status,tempStatus);
+                            tempNode.last_Node = &now_leafs[i - 1];
+                            if (isReach(tempNode)){
+                                targetNode.last_Node =  tempNode.last_Node;
+                                arrayToNode(&targetNode,tempNode.status);
+                                reach = 1;
+                                break;
+                                //如果到达则跳出，并存储节点状态
+                            }else{
+                                now_leafs[i] = tempNode;
+                            }
+                        }else{
+                            wrong = 1;
+                        }
+                        break;
+                    case 3:
+                        if(nowY + 1 <= 3){
+                            tempStatus[nowX][nowY] = tempStatus[nowX][nowY + 1];
+                            tempStatus[nowX][nowY + 1] = 'L';
+                            node tempNode;
+                            //将交换后的状态赋值予节点
+                            arrayToArray(tempNode.status,tempStatus);
+                            tempNode.last_Node = &now_leafs[i - 1];
+                            if (isReach(tempNode)){
+                                targetNode.last_Node =  tempNode.last_Node;
+                                arrayToNode(&targetNode,tempNode.status);
+                                reach = 1;
+                                break;
+                                //如果到达则跳出，并存储节点状态
+                            }else{
+                                now_leafs[i] = tempNode;
+                            }
+                        }else{
+                            wrong = 1;
+                        }
+                        break;
+                    default:
+                        wrong = 1;
+                        break;
+                }
+            }
+            if(reach){
+                printf("DFS result is\n");
                 node *trace = new node[depth];
                 trace[0] = targetNode;
                 for(int k = 1;k < i;++ k){
