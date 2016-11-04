@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 typedef struct leaf{
     void *last_Node;
     int status[4][4];
@@ -45,7 +46,7 @@ int IDDFS(){
     node targetNode;
     arrayToNode(&originNode,origin);
     int reach = 0;
-    int nowX,nowY,direction,depth = 1;
+    int nowX,nowY,direction,depth = 1,nodes = 0;
     node now_leafs[10000];
     now_leafs[0] = originNode;
     //random seed
@@ -177,7 +178,11 @@ int IDDFS(){
                 break;
             }
         }
-        depth++;
+        nodes++;
+        if(nodes >= pow(4.0,depth - 1)){
+            depth ++;
+            nodes = 0;
+        }
     }
     return 0;
 }
