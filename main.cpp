@@ -1,20 +1,28 @@
 #include <iostream>
 #include <math.h>
+
+#define SCALE 8
 typedef struct leaf{
+    int index;
     void *last_Node;
-    int status[4][4];
+    int status[SCALE][SCALE];
+    int nextIndex[4];
+    int depth;
+    int wrong;
+    int heurstic;
+    int last_index;
 } node;
 
-void arrayToNode(node *leaf,int data[4][4]);
-void arrayToArray(int origin[4][4],int data[4][4]);
-void getAgent(int data[4][4],int &x,int &y);
-void getPos(int data[4][4],int &x,int &y,char agent);
+void arrayToNode(node *leaf,int data[SCALE][SCALE]);
+void arrayToArray(int origin[SCALE][SCALE],int data[SCALE][SCALE]);
+void getAgent(int data[SCALE][SCALE],int &x,int &y);
+void getPos(int data[SCALE][SCALE],int &x,int &y,char agent);
+void AstarSearch(node *leaf);
 int getHeurstic(node leaf , char agent);
 int getHeursticTotal(node leaf);
-void AstarSearch(node *leaf,int lastMove);
 int isReach(node leaf);
-int target[4][4]={{0,0,0,0},{0,'A',0,0},{0,'B',0,0},{0,'C',0,0}};
-int origin[4][4]={{0,0,0,0},{0,0,0,0},{0,0,0,0},{'A','B','C','L'}};
+int target[SCALE][SCALE]={{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0},{0,'A',0,0,0,0,0,0},{0,'B',0,0,0,0,0,0},{0,'C',0,0,0,0,0,0},{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0}};
+int origin[SCALE][SCALE]={{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0},{'A','B','C','L',0,0,0,0},{0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0}};
 int BFS();
 int DFS();
 int Astar();
@@ -48,30 +56,32 @@ int main(){
 int Astar(){
     node originNode;
     arrayToNode(&originNode,origin);
-    AstarSearch(&originNode,5);
+    originNode.depth = 0;
+    originNode.wrong = 0;
+    originNode.index = 0;
+    AstarSearch(&originNode);
     return 0;
 }
-void AstarSearch(node *leaf,int lastMove){
+void AstarSearch(node *leaf){
     static int depth = 1;
     static int wholeNodes = 0;
+    static int complexity = 0;
+    static node nodes[100000];
     int nowX,nowY;
-    int tempStatus[4][4];
-    int min = 9999;
-    int lastPos = 0;
-    node nextNode;
+    int tempStatus[SCALE][SCALE];
+    int maxDepth = 0;
     getAgent(leaf->status, nowX, nowY);
     if (isReach(*leaf)){
         printf("Astar result is\n");
         node *trace = new node[depth];
         trace[0] = *leaf;
         for(int k = 1;k < depth;++ k){
-            trace[k] = *(node*)leaf->last_Node;
-            *leaf = trace[k];
+            trace[k] = nodes[trace[k - 1].last_index];
         }
-        for (int k = depth - 1; k >= 0 ; --k) {
-            std::cout<<"step"<<depth - k<<":"<<std::endl;
-            for(int x = 0 ;x < 4;++x){
-                for(int j = 0 ; j < 4 ;++j){
+        for (int k = depth - 2; k >= 0 ; --k) {
+            std::cout<<"step"<<depth - k - 1<<":"<<std::endl;
+            for(int x = 0 ;x < SCALE;++x){
+                for(int j = 0 ; j < SCALE ;++j){
                     if(trace[k].status[x][j] == 0){
                         printf("%d ",trace[k].status[x][j]);
                     }else{
@@ -81,71 +91,77 @@ void AstarSearch(node *leaf,int lastMove){
                 std::cout<<std::endl;
             }
         }
+        std::cout<<"Time complexity is "<<complexity<<std::endl;
         std::cout<<wholeNodes<<" nodes have been expanded for Astar"<<std::endl;
         return;
     }else{
+        complexity++;
         arrayToArray(tempStatus,leaf->status);
-        if(nowX - 1 >= 0 && lastMove!=1) {
+        if(nowX - 1 >= 0) {
             tempStatus[nowX][nowY] = tempStatus[nowX - 1][nowY];
             tempStatus[nowX - 1][nowY] = 'L';
-            node tempNode;
-            arrayToArray(tempNode.status,tempStatus);
-            min = getHeursticTotal(tempNode);
-            lastPos = 0;
-            nextNode = tempNode;
-            nextNode.last_Node = leaf;
             wholeNodes++;
+            arrayToArray(nodes[wholeNodes].status,tempStatus);
+            nodes[wholeNodes].last_index = leaf->index;
+            nodes[wholeNodes].heurstic = depth + getHeursticTotal(nodes[wholeNodes]);
+            nodes[wholeNodes].depth = depth;
+            nodes[wholeNodes].wrong = 1;
+            nodes[wholeNodes].index = wholeNodes;
         }
         arrayToArray(tempStatus,leaf->status);
-        if(nowX + 1 <= 3 && lastMove!=0) {
+        if(nowX + 1 <= SCALE - 1) {
             tempStatus[nowX][nowY] = tempStatus[nowX + 1][nowY];
             tempStatus[nowX + 1][nowY] = 'L';
-            node tempNode;
-            arrayToArray(tempNode.status,tempStatus);
-            int dis = getHeursticTotal(tempNode);
-            if(min > dis){
-                min = dis;
-                lastPos = 1;
-                nextNode = tempNode;
-                nextNode.last_Node = leaf;
-                wholeNodes++;
-            }
-
+            wholeNodes++;
+            arrayToArray(nodes[wholeNodes].status,tempStatus);
+            nodes[wholeNodes].last_index = leaf->index;
+            nodes[wholeNodes].heurstic = depth + getHeursticTotal(nodes[wholeNodes]);
+            nodes[wholeNodes].depth = depth;
+            nodes[wholeNodes].wrong = 1;
+            nodes[wholeNodes].index = wholeNodes;
         }
         arrayToArray(tempStatus,leaf->status);
-        if(nowY - 1 >= 0 && lastMove!=3) {
+        if(nowY - 1 >= 0) {
             tempStatus[nowX][nowY] = tempStatus[nowX][nowY - 1];
             tempStatus[nowX][nowY - 1] = 'L';
-            node tempNode;
-            arrayToArray(tempNode.status,tempStatus);
-            int dis = getHeursticTotal(tempNode);
-            if(min > dis){
-                min = dis;
-                lastPos = 2;
-                nextNode = tempNode;
-                nextNode.last_Node = leaf;
-                wholeNodes++;
-            }
-
+            wholeNodes++;
+            arrayToArray(nodes[wholeNodes].status,tempStatus);
+            nodes[wholeNodes].last_index = leaf->index;
+            nodes[wholeNodes].heurstic = depth + getHeursticTotal(nodes[wholeNodes]);
+            nodes[wholeNodes].depth = depth;
+            nodes[wholeNodes].wrong = 1;
+            nodes[wholeNodes].index = wholeNodes;
         }
         arrayToArray(tempStatus,leaf->status);
-        if(nowY + 1 <= 3 && lastMove!=2) {
+        if(nowY + 1 <= SCALE - 1) {
             tempStatus[nowX][nowY] = tempStatus[nowX][nowY + 1];
             tempStatus[nowX][nowY + 1] = 'L';
-            node tempNode;
-            arrayToArray(tempNode.status,tempStatus);
-            int dis = getHeursticTotal(tempNode);
-            if(min > dis){
-                min = dis;
-                lastPos = 3;
-                nextNode = tempNode;
-                nextNode.last_Node = leaf;
-                wholeNodes++;
-            }
-
+            wholeNodes++;
+            arrayToArray(nodes[wholeNodes].status,tempStatus);
+            nodes[wholeNodes].last_index = leaf->index;
+            nodes[wholeNodes].heurstic = depth + getHeursticTotal(nodes[wholeNodes]);
+            nodes[wholeNodes].depth = depth;
+            nodes[wholeNodes].wrong = 1;
+            nodes[wholeNodes].index = wholeNodes;
         }
-        depth ++;
-        AstarSearch(&nextNode,lastPos);
+        int min = -1000000;
+        int minIndex = 0;
+        for(int k = 0;k < wholeNodes ;k++){
+            if(nodes[k].wrong == 1){
+                if(min == -1000000){
+                    min = nodes[k].heurstic;
+                    minIndex = k;
+                    maxDepth = nodes[k].depth;
+                }else if(nodes[k].heurstic < min){
+                    min = nodes[k].heurstic;
+                    minIndex = k;
+                    maxDepth = nodes[k].depth;
+                }
+            }
+        }
+        depth = maxDepth + 1;
+        nodes[minIndex].wrong = 0;
+        AstarSearch(&nodes[minIndex]);
     }
 }
 int IDDFS(){
@@ -155,7 +171,9 @@ int IDDFS(){
     int reach = 0;
     int nowX,nowY,direction,depth = 1,nodes = 0;
     int wholeNodes = 0;
-    node now_leafs[20];
+    int complexity = 0;
+    int lastMove = 5;
+    node now_leafs[10000];
     now_leafs[0] = originNode;
     //random seed
     srand(time(NULL));
@@ -166,16 +184,18 @@ int IDDFS(){
         for (i = 1; i <= depth ; ++i) {
             //获得上一节点位置
             getAgent(now_leafs[i - 1].status, nowX, nowY);
-            int tempStatus[4][4];
+            int tempStatus[SCALE][SCALE];
             //将父节点的状态值赋给一个临时数组
             arrayToArray(tempStatus,now_leafs[i - 1].status);
             int wrong = 1;
             while(wrong){
+                complexity++;
                 wrong = 0;
                 direction = rand() % 4 + 0;
                 switch(direction){
                     case 0:
-                        if(nowX - 1 >= 0){
+                        if(nowX - 1 >= 0 && lastMove != 1){
+                            lastMove = 0;
                             tempStatus[nowX][nowY] = tempStatus[nowX - 1][nowY];
                             tempStatus[nowX - 1][nowY] = 'L';
                             node tempNode;
@@ -198,7 +218,8 @@ int IDDFS(){
                         }
                         break;
                     case 1:
-                        if(nowX + 1 <= 3){
+                        if(nowX + 1 <= SCALE - 1 && lastMove != 0){
+                            lastMove = 1;
                             tempStatus[nowX][nowY] = tempStatus[nowX + 1][nowY];
                             tempStatus[nowX + 1][nowY] = 'L';
                             node tempNode;
@@ -221,7 +242,8 @@ int IDDFS(){
                         }
                         break;
                     case 2:
-                        if(nowY - 1 >= 0){
+                        if(nowY - 1 >= 0 && lastMove != 3){
+                            lastMove = 2;
                             tempStatus[nowX][nowY] = tempStatus[nowX][nowY - 1];
                             tempStatus[nowX][nowY - 1] = 'L';
                             node tempNode;
@@ -244,7 +266,8 @@ int IDDFS(){
                         }
                         break;
                     case 3:
-                        if(nowY + 1 <= 3){
+                        if(nowY + 1 <= SCALE - 1 && lastMove != 2){
+                            lastMove = 3;
                             tempStatus[nowX][nowY] = tempStatus[nowX][nowY + 1];
                             tempStatus[nowX][nowY + 1] = 'L';
                             node tempNode;
@@ -281,8 +304,8 @@ int IDDFS(){
                 }
                 for (int k = i - 1; k >= 0 ; --k) {
                     std::cout<<"step"<<i - k<<":"<<std::endl;
-                    for(int x = 0 ;x < 4;++x){
-                        for(int j = 0 ; j < 4 ;++j){
+                    for(int x = 0 ;x < SCALE;++x){
+                        for(int j = 0 ; j < SCALE ;++j){
                             if(trace[k].status[x][j] == 0){
                                 printf("%d ",trace[k].status[x][j]);
                             }else{
@@ -293,12 +316,14 @@ int IDDFS(){
                     }
                 }
                 std::cout<<wholeNodes<<" nodes have been expanded for IDDFS but only "<<depthNodes<<" for one depth iterative search"<<std::endl;
+                std::cout<<"Time complexity is "<<complexity<<std::endl;
                 break;
             }
         }
         nodes++;
         if(nodes >= pow(4.0,depth - 1)){
             depth ++;
+            std::cout<<depth<<std::endl;
             nodes = 0;
         }
     }
@@ -313,19 +338,22 @@ int DFS() {
     int wholeNodes = 0;
     node now_leafs[10000];
     now_leafs[0] = originNode;
+    int complexity = 0;
     //random seed
     srand(time(NULL));
     while(!reach) {
         //printf("searching\n");
         int i;
-        for (i = 1; i < 10000 ; ++i) {
+        int depthNodes = 0;
+        for (i = 1; i < 1000 ; ++i) {
             //获得上一节点位置
             getAgent(now_leafs[i - 1].status, nowX, nowY);
-            int tempStatus[4][4];
+            int tempStatus[SCALE][SCALE];
             //将父节点的状态值赋给一个临时数组
             arrayToArray(tempStatus,now_leafs[i - 1].status);
             int wrong = 1;
             while(wrong){
+                complexity++;
                 wrong = 0;
                 direction = rand() % 4 + 0;
                 switch(direction){
@@ -345,6 +373,7 @@ int DFS() {
                                 //如果到达则跳出，并存储节点状态
                             }else{
                                 wholeNodes++;
+                                depthNodes ++;
                                 now_leafs[i] = tempNode;
                             }
                         }else{
@@ -352,7 +381,7 @@ int DFS() {
                         }
                         break;
                     case 1:
-                        if(nowX + 1 <= 3){
+                        if(nowX + 1 <= SCALE - 1){
                             tempStatus[nowX][nowY] = tempStatus[nowX + 1][nowY];
                             tempStatus[nowX + 1][nowY] = 'L';
                             node tempNode;
@@ -367,6 +396,7 @@ int DFS() {
                                 //如果到达则跳出，并存储节点状态
                             }else{
                                 wholeNodes++;
+                                depthNodes ++;
                                 now_leafs[i] = tempNode;
                             }
                         }else{
@@ -389,6 +419,7 @@ int DFS() {
                                 //如果到达则跳出，并存储节点状态
                             }else{
                                 wholeNodes++;
+                                depthNodes ++;
                                 now_leafs[i] = tempNode;
                             }
                         }else{
@@ -396,7 +427,7 @@ int DFS() {
                         }
                         break;
                     case 3:
-                        if(nowY + 1 <= 3){
+                        if(nowY + 1 <= SCALE - 1){
                             tempStatus[nowX][nowY] = tempStatus[nowX][nowY + 1];
                             tempStatus[nowX][nowY + 1] = 'L';
                             node tempNode;
@@ -411,6 +442,7 @@ int DFS() {
                                 //如果到达则跳出，并存储节点状态
                             }else{
                                 wholeNodes++;
+                                depthNodes ++;
                                 now_leafs[i] = tempNode;
                             }
                         }else{
@@ -432,8 +464,8 @@ int DFS() {
                 }
                 for (int k = i - 1; k >= 0 ; --k) {
                     std::cout<<"step"<<i - k<<":"<<std::endl;
-                    for(int x = 0 ;x < 4;++x){
-                        for(int j = 0 ; j < 4 ;++j){
+                    for(int x = 0 ;x < SCALE;++x){
+                        for(int j = 0 ; j < SCALE ;++j){
                             if(trace[k].status[x][j] == 0){
                                 printf("%d ",trace[k].status[x][j]);
                             }else{
@@ -443,7 +475,8 @@ int DFS() {
                         std::cout<<std::endl;
                     }
                 }
-                std::cout<<wholeNodes<<" nodes have been expanded for DFS"<<std::endl;
+                std::cout<<wholeNodes<<" nodes have been expanded for DFS but max only "<<depthNodes<<" for one depth search"<<std::endl;;
+                std::cout<<"Time complexity is "<<complexity<<std::endl;
                 break;
             }
         }
@@ -458,6 +491,7 @@ int BFS() {
     arrayToNode(&originNode,origin);
     node *now_leafs = new node[100000000000];
     now_leafs[0] = originNode;
+    int complexity = 0;
     int depth = 1,locat = 0,lastLocat = 0;
     int reach = 0;
     int wholeNodes = 0;
@@ -466,9 +500,10 @@ int BFS() {
         //nodes为这一深度生成的节点数
         int nodes = 0,nowX,nowY;
         for(int i = lastLocat ; i <= locat ; ++i){
+            complexity++;
             //获得当前Agent的位置
             getAgent(now_leafs[i].status ,nowX,nowY);
-            int tempStatus[4][4];
+            int tempStatus[SCALE][SCALE];
             //将父节点的状态值赋给一个临时数组
             arrayToArray(tempStatus,now_leafs[i].status);
             //向左移动
@@ -494,7 +529,7 @@ int BFS() {
             }
             arrayToArray(tempStatus,now_leafs[i].status);
             //向右移动
-            if(nowX + 1 <= 3 ){
+            if(nowX + 1 <= SCALE -1 ){
                 tempStatus[nowX][nowY] = tempStatus[nowX + 1][nowY];
                 tempStatus[nowX + 1][nowY] = 'L';
                 node tempNode;
@@ -538,7 +573,7 @@ int BFS() {
             }
             arrayToArray(tempStatus,now_leafs[i].status);
             //向下移动
-            if(nowY + 1 <= 3){
+            if(nowY + 1 <= SCALE - 1){
                 tempStatus[nowX][nowY] = tempStatus[nowX][nowY + 1];
                 tempStatus[nowX][nowY + 1] = 'L';
                 node tempNode;
@@ -569,8 +604,8 @@ int BFS() {
             }
             for (int k = depth - 1; k >= 0 ; --k) {
                 std::cout<<"step"<<depth - k<<":"<<std::endl;
-                for(int i = 0 ;i < 4;++i){
-                    for(int j = 0 ; j < 4 ;++j){
+                for(int i = 0 ;i < SCALE;++i){
+                    for(int j = 0 ; j < SCALE ;++j){
                         if(trace[k].status[i][j] == 0){
                             printf("%d ",trace[k].status[i][j]);
                         }else{
@@ -581,6 +616,7 @@ int BFS() {
                 }
             }
             std::cout<<wholeNodes<<" nodes have been expanded for BFS"<<std::endl;
+            std::cout<<"Time complexity is "<<complexity<<std::endl;
             break;
         }
         //将下一次起始点置于这一次的终点之后
@@ -592,26 +628,26 @@ int BFS() {
 }
 
 //将二维数组状态赋值予节点
-void arrayToNode(node *leaf,int data[4][4]){
-    for(int i=0;i<4;++i){
-        for (int j = 0; j < 4; ++j) {
+void arrayToNode(node *leaf,int data[SCALE][SCALE]){
+    for(int i=0;i<SCALE;++i){
+        for (int j = 0; j < SCALE; ++j) {
             leaf->status[i][j] = data[i][j];
         }
     }
 }
 //将二维数组互相赋值
-void arrayToArray(int origin[4][4],int data[4][4]){
-    for(int i=0;i<4;++i){
-        for (int j = 0; j < 4; ++j) {
+void arrayToArray(int origin[SCALE][SCALE],int data[SCALE][SCALE]){
+    for(int i=0;i<SCALE;++i){
+        for (int j = 0; j < SCALE; ++j) {
             origin[i][j] = data[i][j];
         }
     }
 }
 
 //获得Agent的位置
-void getAgent(int data[4][4],int &x,int &y){
-    for(int i=0;i<4;++i){
-        for (int j = 0; j < 4; ++j) {
+void getAgent(int data[SCALE][SCALE],int &x,int &y){
+    for(int i=0;i<SCALE;++i){
+        for (int j = 0; j < SCALE; ++j) {
             if(data[i][j] == 'L'){
                 x = i;
                 y = j;
@@ -622,12 +658,12 @@ void getAgent(int data[4][4],int &x,int &y){
 }
 
 int isReach(node leaf){
-    for(int i=0;i<4;++i){
-        for (int j = 0; j < 4; ++j) {
+    for(int i=0;i<SCALE;++i){
+        for (int j = 0; j < SCALE; ++j) {
             //忽略Agent的位置
             if(leaf.status[i][j] == 'L') leaf.status[i][j] = 0;
             if(leaf.status[i][j] == target[i][j]){
-                if(i == 3 && j == 3){
+                if(i == SCALE - 1 && j == SCALE - 1){
                     return 1;
                 }
             }else{
@@ -662,6 +698,7 @@ int getHeursticTotal(node leaf){
     costDis = abs(nowX - nowaX) + abs(nowY - nowaY) + abs(nowX - nowbX) + abs(nowY - nowbY) + abs(nowX - nowcX) + abs(nowY - nowcY);
     costTarget = abs(targetaX - nowaX) + abs(targetaY - nowaY) + abs(targetbX - nowbX) + abs(targetbY - nowbY) + abs(targetcX - nowcX) + abs(targetcY - nowcY);
     return (cost1+cost2+cost3) + costTarget + costDis;
+    //return costTarget;
 }
 
 int getHeurstic(node leaf , char agent){
@@ -740,9 +777,9 @@ int getHeurstic(node leaf , char agent){
     }
     return cost;
 };
-void getPos(int data[4][4],int &x,int &y,char agent){
-    for(int i=0;i<4;++i){
-        for (int j = 0; j < 4; ++j) {
+void getPos(int data[SCALE][SCALE],int &x,int &y,char agent){
+    for(int i=0;i<SCALE;++i){
+        for (int j = 0; j < SCALE; ++j) {
             if(data[i][j] == agent){
                 x = i;
                 y = j;
